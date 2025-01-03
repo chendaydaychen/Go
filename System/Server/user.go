@@ -74,6 +74,22 @@ func (u *User) Offline() {
 	u.server.Broadcast(u, "已下线")
 }
 
+func (u *User) SendMsg(msg string) {
+	u.conn.Write([]byte(msg))
+}
+
 func (u *User) DoMessage(msg string) {
-	u.server.Broadcast(u, msg)
+	if msg == "who" {
+		// 查询当前在线用户
+		u.server.mapLock.Lock()
+		for _, user := range u.server.OnlineMap {
+			onlineMsg := "[" + user.Address + "]" + user.Name + ":在线...\n"
+			u.SendMsg(onlineMsg)
+		}
+		u.server.mapLock.Unlock()
+		return
+	} else {
+		u.server.Broadcast(u, msg)
+	}
+
 }
