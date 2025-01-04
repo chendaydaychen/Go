@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -86,6 +87,9 @@ func (s *Server) Handler(conn net.Conn) {
 
 	user.Online()
 
+	//监听是否活跃
+	isLive := make(chan bool)
+
 	//读取并处理来自客户端的消息
 	go func() {
 		buf := make([]byte, 4096)
@@ -102,10 +106,26 @@ func (s *Server) Handler(conn net.Conn) {
 			msg := string(buf[:n-1])
 
 			user.DoMessage(msg)
+
+			isLive <- true
 		}
 	}()
 	//阻塞
-	select {}
+	for {
+		select {
+		case <-isLive:
+			//重置定时器
+			//如果客户端发送了消息，则重置定时器，使其继续计时
+			continue
+		case <-time.After(time.Second * 10):
+			//超时，强制关闭
+
+			user.SendMsg("你被踢了")
+			close(user.C)
+			conn.Close()
+			return
+		}
+	}
 }
 
 // Start 启动服务器并开始监听指定的IP和端口
