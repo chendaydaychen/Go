@@ -1,6 +1,9 @@
 package main
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 type User struct {
 	Name    string
@@ -104,6 +107,29 @@ func (u *User) DoMessage(msg string) {
 			u.Name = newName
 			u.SendMsg("您已经重名为：" + u.Name + "\n")
 		}
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		// 私聊
+		// 消息格式: to|user|msg
+		// 获取目标用户名
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			u.SendMsg("消息格式不正确，请使用\"to|user|msg\"格式发送私聊消息\n")
+			return
+		}
+		// 获取消息
+		remoteUser, ok := u.server.OnlineMap[remoteName]
+		if !ok {
+			u.SendMsg("该用户不存在\n")
+			return
+		}
+		content := strings.Split(msg, "|")[2]
+		if content == "" {
+			u.SendMsg("无内容，请重发\n")
+			return
+		}
+		// 发送消息
+		remoteUser.SendMsg(u.Name + "对你说：" + content + "\n")
+
 	} else {
 		u.server.Broadcast(u, msg)
 	}

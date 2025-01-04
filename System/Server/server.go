@@ -117,7 +117,7 @@ func (s *Server) Handler(conn net.Conn) {
 			//重置定时器
 			//如果客户端发送了消息，则重置定时器，使其继续计时
 			continue
-		case <-time.After(time.Second * 10):
+		case <-time.After(time.Second * 100):
 			//超时，强制关闭
 
 			user.SendMsg("你被踢了")
